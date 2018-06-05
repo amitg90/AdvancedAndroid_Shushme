@@ -16,12 +16,26 @@ package com.example.android.shushme;
 * limitations under the License.
 */
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.View;
+import android.widget.CheckBox;
+import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.Places;
+
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     // Constants
     public static final String TAG = MainActivity.class.getSimpleName();
@@ -29,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     // Member variables
     private PlaceListAdapter mAdapter;
     private RecyclerView mRecyclerView;
+    private GoogleApiClient googleApiClient;
 
     /**
      * Called when the activity is starting
@@ -47,6 +62,91 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView.setAdapter(mAdapter);
 
         // TODO (4) Create a GoogleApiClient with the LocationServices API and GEO_DATA_API
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .addApi(Places.GEO_DATA_API)
+                .build();
+        Log.e("AMIT", "google API client created");
+        googleApiClient.connect();
+
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        Log.e("AMIT", "onConnected called");
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        Log.e("AMIT", "onConnectionSuspended called");
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Log.e("AMIT", "onConnectionFailed called");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.e("AMIT", "onResume clicked");
+
+        CheckBox checkBox = (CheckBox) findViewById(R.id.location_checkbox);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED) {
+            checkBox.setChecked(false);
+        } else {
+            checkBox.setChecked(true);
+            checkBox.setEnabled(false);
+        }
+    }
+
+    public void onNewLocationAddClick(View view) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "onNewLocationAddClick called, current permission denied", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "onNewLocationAddClick called, current permission accepted", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void onLocationPermissionClicked(View view) {
+        Log.e("AMIT", "onLocationPermissionClicked clicked");
+
+        ActivityCompat.requestPermissions(MainActivity.this,
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                1);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+                    CheckBox checkBox = (CheckBox) findViewById(R.id.location_checkbox);
+                    checkBox.setChecked(true);
+                    checkBox.setEnabled(false);
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                    Toast.makeText(MainActivity.this, "Permission denied to enable location", Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
     }
 
     // TODO (5) Override onConnected, onConnectionSuspended and onConnectionFailed for GoogleApiClient
