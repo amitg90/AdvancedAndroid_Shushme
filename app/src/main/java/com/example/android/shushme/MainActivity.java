@@ -16,13 +16,17 @@ package com.example.android.shushme;
 * limitations under the License.
 */
 
+import android.Manifest;
+import android.app.NotificationManager;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -236,6 +240,8 @@ public class MainActivity extends AppCompatActivity implements
     public void onResume() {
         super.onResume();
 
+        Log.e("onResume", "onresume called");
+
         // Initialize location permissions checkbox
         CheckBox locationPermissions = (CheckBox) findViewById(R.id.location_permission_checkbox);
         if (ActivityCompat.checkSelfPermission(MainActivity.this,
@@ -244,12 +250,27 @@ public class MainActivity extends AppCompatActivity implements
         } else {
             locationPermissions.setChecked(true);
             locationPermissions.setEnabled(false);
+            Log.e("onResume", "Location permission granted");
+
         }
 
         //TODO (3) Initialize ringer permissions checkbox
+        CheckBox checkBox = (CheckBox) findViewById(R.id.ringer_permission_checkbox);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= 24 && notificationManager.isNotificationPolicyAccessGranted() == false) {
+            checkBox.setChecked(false);
+            Log.e("onResume", "No Policy Access granted");
+        } else {
+            checkBox.setChecked(true);
+            checkBox.setEnabled(false);
+        }
     }
 
     // TODO (2) Implement onRingerPermissionsClicked to launch ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS
+    public void onRingerPermissionsClicked(View view) {
+        Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+        startActivity(intent);
+    }
 
     public void onLocationPermissionClicked(View view) {
         ActivityCompat.requestPermissions(MainActivity.this,
